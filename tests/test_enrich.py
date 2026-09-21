@@ -54,9 +54,9 @@ def test_call_gemini_returns_text_from_response(monkeypatch):
         def json(self):
             return {"candidates": [{"content": {"parts": [{"text": "hello"}]}}]}
 
-    def fake_post(url, params=None, json=None, timeout=None):
+    def fake_post(url, headers=None, json=None, timeout=None):
         captured["url"] = url
-        captured["params"] = params
+        captured["headers"] = headers
         captured["json"] = json
         captured["timeout"] = timeout
         return FakeResponse()
@@ -66,7 +66,7 @@ def test_call_gemini_returns_text_from_response(monkeypatch):
     text = enrich._call_gemini("プロンプト", "fake-api-key")
 
     assert text == "hello"
-    assert captured["params"] == {"key": "fake-api-key"}
+    assert captured["headers"] == {"x-goog-api-key": "fake-api-key"}
     assert captured["timeout"] == 30
     assert captured["json"]["contents"][0]["parts"][0]["text"] == "プロンプト"
     assert captured["json"]["generationConfig"]["response_mime_type"] == "application/json"
@@ -142,6 +142,36 @@ def test_enrich_articles_falls_back_on_exception(monkeypatch):
     ]
 
 
+def test_enrich_articles_falls_back_on_star_type_drift(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {
+                "candidates": [{
+                    "content": {"parts": [{"text": json.dumps([
+                        {"summary": "要約A", "star": "4", "recommended": True},
+                    ])}]}
+                }]
+            }
+
+    monkeypatch.setattr(enrich.requests, "post", lambda *a, **kw: FakeResponse())
+
+    articles = [{"source": "S1", "title": "T1", "link": "https://x/1", "published_display": "d"}]
+
+    result = enrich.enrich_articles(articles)
+
+    assert result == [
+        {
+            "source": "S1", "title": "T1", "link": "https://x/1", "published_display": "d",
+            "summary": None, "star": None, "recommended": False,
+        }
+    ]
+
+
 def test_enrich_articles_handles_empty_list(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
     calls = []
@@ -166,7 +196,7 @@ def test_enrich_articles_caps_recommended_to_top_ten_by_star(monkeypatch):
         for i in range(12)
     ]
     enrichment_items = [
-        {"summary": f"要約{i}", "star": i + 1, "recommended": True}
+        {"summary": f"要約{i}", "star": 1 if i < 2 else 2 + (i % 4), "recommended": True}
         for i in range(12)
     ]
 

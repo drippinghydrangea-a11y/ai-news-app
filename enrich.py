@@ -39,13 +39,17 @@ def _parse_enrichment(text, expected_count):
     for item in parsed:
         if not isinstance(item, dict) or not {"summary", "star", "recommended"} <= item.keys():
             raise ValueError(f"Malformed enrichment item: {item!r}")
+        if not isinstance(item["summary"], str):
+            raise ValueError(f"summary must be a string: {item!r}")
+        if not isinstance(item["star"], int) or not (1 <= item["star"] <= 5):
+            raise ValueError(f"star must be an int in 1..5: {item!r}")
     return parsed
 
 
 def _call_gemini(prompt, api_key):
     response = requests.post(
         GEMINI_API_URL,
-        params={"key": api_key},
+        headers={"x-goog-api-key": api_key},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
@@ -82,8 +86,8 @@ def enrich_articles(articles):
         prompt = _build_prompt(articles)
         text = _call_gemini(prompt, api_key)
         enrichment = _parse_enrichment(text, len(articles))
-    except Exception:
-        logger.warning("Gemini enrichment failed; falling back to unenriched articles", exc_info=True)
+    except Exception as exc:
+        logger.warning("Gemini enrichment failed: %s", type(exc).__name__)
         return fallback
 
     recommended_indices = [i for i, item in enumerate(enrichment) if item.get("recommended")]
