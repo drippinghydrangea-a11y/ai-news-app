@@ -22,6 +22,8 @@ jobs:
       - run: pip install -r requirements.txt
 
       - run: python generate_site.py
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Commit and push
         run: |
