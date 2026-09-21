@@ -95,3 +95,45 @@ def test_main_enriches_articles_before_rendering(monkeypatch, tmp_path):
 
     assert captured["articles"] == sample
     assert output_path.exists()
+
+
+def test_render_html_shows_summary_and_star_when_present():
+    articles = [
+        {
+            "title": "T", "link": "https://x/1", "source": "S", "published_display": "d",
+            "summary": "これは要約です", "star": 3, "recommended": True,
+        }
+    ]
+
+    html = generate_site.render_html(articles, "now")
+
+    assert "これは要約です" in html
+    assert "★★★☆☆" in html
+
+
+def test_render_html_hides_summary_and_star_when_absent():
+    articles = [
+        {
+            "title": "T", "link": "https://x/1", "source": "S", "published_display": "d",
+            "summary": None, "star": None, "recommended": False,
+        }
+    ]
+
+    html = generate_site.render_html(articles, "now")
+
+    assert 'class="summary"' not in html
+    assert 'class="stars"' not in html
+
+
+def test_render_html_includes_recommended_tab_and_attribute():
+    articles = [
+        {
+            "title": "T", "link": "https://x/1", "source": "S", "published_display": "d",
+            "summary": None, "star": None, "recommended": True,
+        }
+    ]
+
+    html = generate_site.render_html(articles, "now")
+
+    assert 'data-view="recommended"' in html
+    assert 'data-recommended="true"' in html

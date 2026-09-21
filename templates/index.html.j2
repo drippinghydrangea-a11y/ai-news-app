@@ -84,6 +84,8 @@
   .title a:hover,
   .title a:focus-visible { text-decoration: underline; }
   .date { color: var(--text-muted); font-size: 0.75rem; margin-top: 8px; }
+  .summary { font-size: 0.88rem; color: var(--text); margin-top: 8px; line-height: 1.5; }
+  .stars { font-size: 0.85rem; color: var(--accent); margin-top: 6px; letter-spacing: 1px; }
   .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
   .tab-btn {
     font: inherit;
@@ -103,6 +105,7 @@
   }
   body[data-view="unread"] .card.is-read { display: none; }
   body[data-view="read"] .card:not(.is-read) { display: none; }
+  body[data-view="recommended"] .card:not([data-recommended="true"]) { display: none; }
   .empty-state {
     text-align: center;
     color: var(--text-muted);
@@ -119,13 +122,20 @@
   <div class="tabs">
     <button class="tab-btn active" data-view="unread" type="button">未読</button>
     <button class="tab-btn" data-view="read" type="button">既読</button>
+    <button class="tab-btn" data-view="recommended" type="button">おすすめ</button>
   </div>
   <div class="empty-state" id="empty-state" hidden></div>
   {% for article in articles %}
-  <div class="card" data-link="{{ article.link }}">
+  <div class="card" data-link="{{ article.link }}" data-recommended="{{ 'true' if article.recommended else 'false' }}">
     <div class="source">{{ article.source }}</div>
     <div class="title"><a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a></div>
     <div class="date">{{ article.published_display }}</div>
+    {% if article.summary %}
+    <div class="summary">{{ article.summary }}</div>
+    {% endif %}
+    {% if article.star %}
+    <div class="stars">{{ '★' * article.star }}{{ '☆' * (5 - article.star) }}</div>
+    {% endif %}
   </div>
   {% endfor %}
   <script>
@@ -159,10 +169,17 @@
     function updateEmptyState() {
       var view = document.body.getAttribute('data-view');
       var visibleCount = cards.filter(function (card) {
-        return view === 'read' ? card.classList.contains('is-read') : !card.classList.contains('is-read');
+        if (view === 'read') return card.classList.contains('is-read');
+        if (view === 'recommended') return card.getAttribute('data-recommended') === 'true';
+        return !card.classList.contains('is-read');
       }).length;
       emptyState.hidden = visibleCount !== 0;
-      emptyState.textContent = view === 'read' ? 'まだ既読の記事がありません' : 'すべて既読です 🎉';
+      var messages = {
+        unread: 'すべて既読です 🎉',
+        read: 'まだ既読の記事がありません',
+        recommended: 'おすすめ記事がありません',
+      };
+      emptyState.textContent = messages[view] || '';
     }
 
     tabButtons.forEach(function (btn) {
