@@ -21,6 +21,22 @@ def test_render_html_includes_articles():
     assert "2026-09-21 01:00 UTC" in html
 
 
+def test_render_html_escapes_untrusted_content():
+    articles = [
+        {
+            "title": "<script>alert(1)</script>",
+            "link": "https://x/1",
+            "source": "S1",
+            "published_display": "2026-09-21 00:00 UTC",
+        }
+    ]
+
+    html = generate_site.render_html(articles, "2026-09-21 01:00 UTC")
+
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
+
+
 def test_write_site_creates_file(tmp_path):
     output_path = tmp_path / "docs" / "index.html"
 

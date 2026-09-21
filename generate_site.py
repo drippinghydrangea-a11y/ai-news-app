@@ -12,7 +12,7 @@ OUTPUT_PATH = Path(__file__).parent / "docs" / "index.html"
 
 
 def render_html(articles, generated_at_display):
-    env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
+    env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=True)
     template = env.get_template("index.html.j2")
     return template.render(articles=articles, generated_at=generated_at_display)
 

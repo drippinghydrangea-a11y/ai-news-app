@@ -80,6 +80,19 @@ def test_fetch_feed_handles_failure(monkeypatch, caplog):
     assert "Broken Source" in caplog.text
 
 
+def test_fetch_feed_handles_exception_during_parse(monkeypatch, caplog):
+    def fake_parse(url):
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(fetch_news.feedparser, "parse", fake_parse)
+
+    with caplog.at_level("WARNING"):
+        articles = fetch_news.fetch_feed("Timeout Source", "https://example.com/timeout")
+
+    assert articles == []
+    assert "Timeout Source" in caplog.text
+
+
 def _article(title, link, source="S1"):
     return {
         "title": title,

@@ -1,4 +1,5 @@
 import logging
+import socket
 import time
 from urllib.parse import urlsplit, urlunsplit
 
@@ -6,6 +7,8 @@ import feedparser
 import yaml
 
 logger = logging.getLogger(__name__)
+
+socket.setdefaulttimeout(20)
 
 
 def load_feeds(config_path):
@@ -24,7 +27,12 @@ def fetch_feed(name, url):
     Returns a list of article dicts on success, or an empty list if the
     feed could not be fetched/parsed (a warning is logged in that case).
     """
-    parsed = feedparser.parse(url)
+    try:
+        parsed = feedparser.parse(url)
+    except Exception as exc:
+        logger.warning("Failed to fetch feed %s (%s): %s", name, url, exc)
+        return []
+
     if parsed.bozo and not parsed.entries:
         logger.warning(
             "Failed to fetch feed %s (%s): %s",
