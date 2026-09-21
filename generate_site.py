@@ -5,6 +5,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from fetch_news import get_all_articles
+from enrich import enrich_articles
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 FEEDS_CONFIG = Path(__file__).parent / "feeds.yaml"
@@ -31,10 +32,12 @@ def main():
         )
         sys.exit(1)
 
+    enriched = enrich_articles(articles)
+
     generated_at_display = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
-    html = render_html(articles, generated_at_display)
+    html = render_html(enriched, generated_at_display)
     write_site(html, OUTPUT_PATH)
-    print(f"Wrote {len(articles)} articles to {OUTPUT_PATH}")
+    print(f"Wrote {len(enriched)} articles to {OUTPUT_PATH}")
 
 
 if __name__ == "__main__":

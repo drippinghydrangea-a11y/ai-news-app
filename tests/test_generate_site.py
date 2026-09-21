@@ -71,3 +71,27 @@ def test_main_writes_site_on_success(monkeypatch, tmp_path):
 
     assert output_path.exists()
     assert "T" in output_path.read_text(encoding="utf-8")
+
+
+def test_main_enriches_articles_before_rendering(monkeypatch, tmp_path):
+    sample = [
+        {"title": "T", "link": "https://x/1", "source": "S", "published_display": "d"},
+    ]
+    enriched_sample = [
+        dict(sample[0], summary="要約", star=4, recommended=True),
+    ]
+    captured = {}
+
+    def fake_enrich(articles):
+        captured["articles"] = articles
+        return enriched_sample
+
+    monkeypatch.setattr(generate_site, "get_all_articles", lambda path: sample)
+    monkeypatch.setattr(generate_site, "enrich_articles", fake_enrich)
+    output_path = tmp_path / "index.html"
+    monkeypatch.setattr(generate_site, "OUTPUT_PATH", output_path)
+
+    generate_site.main()
+
+    assert captured["articles"] == sample
+    assert output_path.exists()
