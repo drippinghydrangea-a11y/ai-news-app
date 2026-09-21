@@ -1,0 +1,4 @@
+- name: ITmedia AI+
+  url: https://rss.itmedia.co.jp/rss/2.0/aiplus.xml
+- name: AINOW
+  url: https://ainow.ai/feed/
