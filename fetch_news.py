@@ -48,3 +48,65 @@ def _entry_to_article(entry, source_name):
         "published_parsed": published_parsed,
         "published_display": published_display,
     }
+
+
+def _normalize_link(link):
+    if not link:
+        return ""
+    parts = urlsplit(link)
+    path = parts.path.rstrip("/")
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, "", ""))
+
+
+def dedupe_articles(articles):
+    """Remove duplicates by normalized link OR exact title match, keeping
+    the first occurrence encountered.
+    """
+    seen_links = set()
+    seen_titles = set()
+    result = []
+    for article in articles:
+        norm_link = _normalize_link(article["link"])
+        title_key = article["title"].strip()
+        if (norm_link and norm_link in seen_links) or (title_key in seen_titles):
+            continue
+        if norm_link:
+            seen_links.add(norm_link)
+        seen_titles.add(title_key)
+        result.append(article)
+    return result
+
+
+def sort_and_limit(articles, per_source_limit=10):
+    """Sort each source's articles newest-first and keep only the top
+    `per_source_limit` per source. Articles without a parsed publish date
+    sort last within their source. The final list is sorted newest-first
+    overall.
+    """
+    by_source = {}
+    for article in articles:
+        by_source.setdefault(article["source"], []).append(article)
+
+    limited = []
+    for source_articles in by_source.values():
+        source_articles.sort(
+            key=lambda a: a["published_parsed"] or time.gmtime(0),
+            reverse=True,
+        )
+        limited.extend(source_articles[:per_source_limit])
+
+    limited.sort(key=lambda a: a["published_parsed"] or time.gmtime(0), reverse=True)
+    return limited
+
+
+def get_all_articles(config_path, per_source_limit=10):
+    """Orchestrate load_feeds -> fetch_feed (per feed) -> dedupe_articles
+    -> sort_and_limit. Returns the final article list, which may be empty
+    if every feed failed.
+    """
+    feeds = load_feeds(config_path)
+    all_articles = []
+    for feed in feeds:
+        all_articles.extend(fetch_feed(feed["name"], feed["url"]))
+    deduped = dedupe_articles(all_articles)
+    return sort_and_limit(deduped, per_source_limit)
