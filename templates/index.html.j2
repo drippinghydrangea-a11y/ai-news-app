@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIニュースまとめ</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 16px;
+    background: #fafafa;
+    color: #1a1a1a;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #121212; color: #e6e6e6; }
+    .card { background: #1e1e1e; }
+  }
+  h1 { font-size: 1.4rem; }
+  .updated { color: #666; font-size: 0.85rem; margin-bottom: 16px; }
+  .card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .source { font-size: 0.8rem; color: #1a73e8; font-weight: bold; }
+  .title a { color: inherit; text-decoration: none; font-size: 1rem; }
+  .title a:hover { text-decoration: underline; }
+  .date { font-size: 0.75rem; color: #888; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <h1>AIニュースまとめ</h1>
+  <div class="updated">最終更新: {{ generated_at }}</div>
+  {% for article in articles %}
+  <div class="card">
+    <div class="source">{{ article.source }}</div>
+    <div class="title"><a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a></div>
+    <div class="date">{{ article.published_display }}</div>
+  </div>
+  {% endfor %}
+</body>
+</html>
