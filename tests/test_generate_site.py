@@ -137,3 +137,19 @@ def test_render_html_includes_recommended_tab_and_attribute():
 
     assert 'data-view="recommended"' in html
     assert 'data-recommended="true"' in html
+
+
+def test_render_html_includes_pwa_head_links_and_timestamp():
+    articles = [
+        {
+            "title": "T", "link": "https://x/1", "source": "S", "published_display": "d",
+            "published_iso": "2026-09-21T00:00:00Z",
+            "summary": None, "star": None, "recommended": False,
+        }
+    ]
+
+    html = generate_site.render_html(articles, "now")
+
+    assert 'rel="manifest"' in html
+    assert 'rel="apple-touch-icon"' in html
+    assert 'data-timestamp="2026-09-21T00:00:00Z"' in html

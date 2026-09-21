@@ -55,7 +55,9 @@ def test_fetch_feed_returns_articles(monkeypatch):
     assert articles[0]["link"] == "https://example.com/one"
     assert articles[0]["source"] == "Sample Source"
     assert articles[0]["published_display"] == "2026-09-21 00:00 UTC"
+    assert articles[0]["published_iso"] == "2026-09-21T00:00:00Z"
     assert articles[1]["published_display"] == "2026-09-20 00:00 UTC"
+    assert articles[1]["published_iso"] == "2026-09-20T00:00:00Z"
 
 
 class FakeBozoResult:

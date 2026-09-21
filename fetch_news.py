@@ -47,14 +47,17 @@ def _entry_to_article(entry, source_name):
     published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
     if published_parsed:
         published_display = time.strftime("%Y-%m-%d %H:%M UTC", published_parsed)
+        published_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", published_parsed)
     else:
         published_display = ""
+        published_iso = ""
     return {
         "title": entry.get("title", "(no title)"),
         "link": entry.get("link", ""),
         "source": source_name,
         "published_parsed": published_parsed,
         "published_display": published_display,
+        "published_iso": published_iso,
     }
 
 
