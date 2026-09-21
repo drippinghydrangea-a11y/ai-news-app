@@ -84,19 +84,110 @@
   .title a:hover,
   .title a:focus-visible { text-decoration: underline; }
   .date { color: var(--text-muted); font-size: 0.75rem; margin-top: 8px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn {
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: var(--accent-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  body[data-view="unread"] .card.is-read { display: none; }
+  body[data-view="read"] .card:not(.is-read) { display: none; }
+  .empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 48px 0;
+    font-size: 0.9rem;
+  }
 </style>
 </head>
-<body>
+<body data-view="unread">
   <header>
     <h1>AIニュースまとめ</h1>
     <div class="updated">最終更新: {{ generated_at }}</div>
   </header>
+  <div class="tabs">
+    <button class="tab-btn active" data-view="unread" type="button">未読</button>
+    <button class="tab-btn" data-view="read" type="button">既読</button>
+  </div>
+  <div class="empty-state" id="empty-state" hidden></div>
   {% for article in articles %}
-  <div class="card">
+  <div class="card" data-link="{{ article.link }}">
     <div class="source">{{ article.source }}</div>
     <div class="title"><a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a></div>
     <div class="date">{{ article.published_display }}</div>
   </div>
   {% endfor %}
+  <script>
+  (function () {
+    var STORAGE_KEY = 'aiNewsApp.readLinks';
+    var readLinks;
+    try {
+      readLinks = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+    } catch (e) {
+      readLinks = new Set();
+    }
+
+    function persist() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(readLinks)));
+      } catch (e) {
+        /* localStorage unavailable; read state just won't persist */
+      }
+    }
+
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+    var emptyState = document.getElementById('empty-state');
+    var tabButtons = Array.prototype.slice.call(document.querySelectorAll('.tab-btn'));
+
+    function applyReadState() {
+      cards.forEach(function (card) {
+        card.classList.toggle('is-read', readLinks.has(card.getAttribute('data-link')));
+      });
+    }
+
+    function updateEmptyState() {
+      var view = document.body.getAttribute('data-view');
+      var visibleCount = cards.filter(function (card) {
+        return view === 'read' ? card.classList.contains('is-read') : !card.classList.contains('is-read');
+      }).length;
+      emptyState.hidden = visibleCount !== 0;
+      emptyState.textContent = view === 'read' ? 'まだ既読の記事がありません' : 'すべて既読です 🎉';
+    }
+
+    tabButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tabButtons.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.body.setAttribute('data-view', btn.getAttribute('data-view'));
+        updateEmptyState();
+      });
+    });
+
+    cards.forEach(function (card) {
+      var link = card.querySelector('.title a');
+      if (!link) return;
+      link.addEventListener('click', function () {
+        readLinks.add(card.getAttribute('data-link'));
+        persist();
+        applyReadState();
+        updateEmptyState();
+      });
+    });
+
+    applyReadState();
+    updateEmptyState();
+  })();
+  </script>
 </body>
 </html>

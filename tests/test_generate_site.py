@@ -33,8 +33,8 @@ def test_render_html_escapes_untrusted_content():
 
     html = generate_site.render_html(articles, "2026-09-21 01:00 UTC")
 
-    assert "<script>" not in html
-    assert "&lt;script&gt;" in html
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
 
 
 def test_write_site_creates_file(tmp_path):
